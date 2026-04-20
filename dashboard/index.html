@@ -265,6 +265,9 @@
   </head>
   <body>
     <div class="container">
+        <div id="slo-alert-banner" style="display:none; background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fecaca; text-align: center; font-weight: bold; animation: pulse 2s infinite;">
+            ⚠️ SLO VIOLATION DETECTED: System health is below target thresholds!
+        </div>
         <header>
             <div class="logo-area">
                 <h1>OBSERVABILITY COMMAND CENTER</h1>
@@ -437,6 +440,20 @@
                     history.quality.shift();
                 }
 
+                // Variable calculations
+                const errorRate = data.traffic > 0 ? ((errCount / (data.traffic + errCount)) * 100).toFixed(1) : 0;
+                const isSlow = data.latency_p95 > 2000;
+                const isBuggy = errorRate > 2;
+                const banner = document.getElementById('slo-alert-banner');
+
+                // Update Banner
+                if (isSlow || isBuggy) {
+                    banner.style.display = 'block';
+                    banner.innerText = `⚠️ SLO VIOLATION: ${isSlow ? 'High Latency (>2s) ' : ''}${isBuggy ? 'High Error Rate (>2%)' : ''}`;
+                } else {
+                    banner.style.display = 'none';
+                }
+
                 // Update charts data
                 charts.latency.data.datasets[0].data = history.latency;
                 charts.traffic.data.datasets[0].data = history.traffic;
@@ -454,8 +471,6 @@
                 document.getElementById('val-p95').innerText = `P95: ${Math.round(data.latency_p95)} ms`;
                 
                 document.getElementById('traffic').innerHTML = `${data.traffic}<span class="unit">REQ</span>`;
-                
-                const errorRate = data.traffic > 0 ? ((errCount / (data.traffic + errCount)) * 100).toFixed(1) : 0;
                 document.getElementById('error-rate').innerHTML = `${errorRate}<span class="unit">%</span>`;
                 
                 const breakdown = document.getElementById('error-breakdown');
