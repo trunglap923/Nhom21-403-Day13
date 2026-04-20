@@ -6,14 +6,16 @@ load_dotenv()
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from structlog.contextvars import bind_contextvars
 
 from .agent import LabAgent
 from .incidents import disable, enable, status
 from .logging_config import configure_logging, get_logger
-from .metrics import record_error, snapshot
+from .metrics import snapshot, record_request, record_error
 from .middleware import CorrelationIdMiddleware
-from .pii import hash_user_id, summarize_text
+from .pii import hash_user_id, summarize_text, scrub_text
 from .schemas import ChatRequest, ChatResponse
 from .tracing import tracing_enabled
 
@@ -21,7 +23,20 @@ configure_logging()
 log = get_logger()
 app = FastAPI(title="Day 13 Observability Lab")
 app.add_middleware(CorrelationIdMiddleware)
+
+# Enable CORS for local development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins (like port 5500)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 agent = LabAgent()
+
+# Mount dashboard static files
+app.mount("/view", StaticFiles(directory="dashboard", html=True), name="static_dashboard")
 
 
 @app.on_event("startup")
@@ -60,6 +75,7 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
         payload={"message_preview": summarize_text(body.message)},
     )
     try:
+        print("DEBUG: Calling agent.run")
         result = agent.run(
             user_id=body.user_id,
             feature=body.feature,
@@ -74,6 +90,13 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
             tokens_out=result.tokens_out,
             cost_usd=result.cost_usd,
             payload={"answer_preview": summarize_text(result.answer)},
+        )
+        record_request(
+            latency_ms=result.latency_ms,
+            cost_usd=result.cost_usd,
+            tokens_in=result.tokens_in,
+            tokens_out=result.tokens_out,
+            quality_score=result.quality_score,
         )
         return ChatResponse(
             answer=result.answer,
@@ -91,7 +114,10 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
             "request_failed",
             service="api",
             error_type=error_type,
-            payload={"detail": str(exc), "message_preview": summarize_text(body.message)},
+            payload={
+                "detail": scrub_text(str(exc)),
+                "message_preview": summarize_text(body.message),
+            },
         )
         raise HTTPException(status_code=500, detail=error_type) from exc
 
