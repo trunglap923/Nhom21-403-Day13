@@ -64,10 +64,15 @@
 
 ## 5. Individual Contributions & Evidence
 
-### [MEMBER_A_NAME]
+### Dương Mạnh Kiên (Logging & PII)
 
 - [TASKS_COMPLETED]:
-- [EVIDENCE_LINK]: (Link to specific commit or PR)
+  - Hoàn thiện `CorrelationIdMiddleware` trong `app/middleware.py`: tự sinh `x-request-id` theo định dạng `req-<8-hex>` (hoặc kế thừa từ header client gửi lên), bind vào `structlog.contextvars` và gắn header `x-request-id` + `x-response-time-ms` vào response để phục vụ truy vết end-to-end.
+  - Bổ sung `bind_contextvars` tại endpoint `/chat` (`app/main.py`) để làm giàu mọi log API với `user_id_hash`, `session_id`, `feature`, `model`, `env` — đáp ứng đầy đủ trường enrichment theo `config/logging_schema.json`.
+  - Kích hoạt processor `scrub_event` trong chuỗi xử lý `structlog` (`app/logging_config.py`) để tự động redact PII trước khi log ra `data/logs.jsonl`.
+  - Mở rộng `PII_PATTERNS` trong `app/pii.py`: bổ sung regex cho số hộ chiếu (`[A-Z]\d{7,8}`) và địa chỉ Việt Nam (`Số … Đường/Phường/Quận …`), bên cạnh email, phone_vn, CCCD và credit card.
+  - Xác thực bằng `scripts/validate_logs.py`: đạt **100/100** — PASSED cả 4 tiêu chí (JSON schema, Correlation ID propagation, Log enrichment, PII scrubbing), 0 PII leak trên mẫu log; `pytest tests/` xanh.
+- [EVIDENCE_LINK]: [PR #1 KienDM — logging + PII](https://github.com/trunglap923/Nhom10-403-Day13/commit/ac219ce)
 
 ### Tạ Vĩnh Phúc (Tracing & Tags)
 
