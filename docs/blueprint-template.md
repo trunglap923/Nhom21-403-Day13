@@ -27,9 +27,12 @@
 
 ### 3.1 Logging & Tracing
 
-- \[EVIDENCE_CORRELATION_ID_SCREENSHOT]: /latency_dashboard_chart_1776681696876.png
-- \[EVIDENCE_PII_REDACTION_SCREENSHOT]: /dashboard_initial_view_1776682810893.png
-- \[EVIDENCE_TRACE_WATERFALL_SCREENSHOT]: /langfuse_check_1776675655628.webp
+- \[EVIDENCE_CORRELATION_ID_SCREENSHOT]: 
+![Correlation ID](../extras/correlation_id.png)
+- \[EVIDENCE_PII_REDACTION_SCREENSHOT]: 
+![PII Redaction](../extras/pii_redaction.png)
+- \[EVIDENCE_TRACE_WATERFALL_SCREENSHOT]: 
+![Trace Waterfall](../extras/langfuse_check.png)
 - \[TRACE_WATERFALL_EXPLANATION]: Span `@observe` ghi nhận toàn bộ vòng đời của một request từ khi user gửi message đến khi Agent hoàn thành việc gọi Tool (RAG/Summary) và trả về kết quả, bao gồm cả các metadata như user_id và session_id.
 
 ### 3.2 Dashboard & SLOs
